@@ -29,7 +29,7 @@ export const UserRegister = async (req, res, next) => {
       img,
     });
     const createdUser = await user.save();
-    const token = jwt.sign({ id: createdUser._id }, process.env.JWT, {
+    const token = jwt.sign({ id: createdUser._id }, "chetan", {
       expiresIn: "9999 years",
     });
     return res.status(201).json({ token, user });
@@ -53,7 +53,7 @@ export const UserLogin = async (req, res, next) => {
       return next(createError(403, "Incorrect password"));
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT, {
+    const token = jwt.sign({ id: user._id }, "chetan", {
       expiresIn: "9999 years",
     });
     return res.status(200).json({ token, user });
@@ -127,14 +127,20 @@ export const getAllCartItems = async (req, res, next) => {
     const userJWT = req.user;
     const user = await User.findById(userJWT.id).populate({
       path: "cart.product",
-      model: "Food",
+      model: "Food", // Ensure this matches your Food model name
     });
-    const cartItems = user.cart;
-    return res.status(200).json(cartItems);
+
+    if (!user) {
+      return next(createError(404, "User not found"));
+    }
+
+    return res.status(200).json(user.cart); // Send the populated cart items
   } catch (err) {
-    next(err);
+    console.error("Error fetching cart items:", err);
+    next(err); // Forward the error to the error handler
   }
 };
+
 
 //Orders
 
@@ -212,6 +218,7 @@ export const addToFavorites = async (req, res, next) => {
       .status(200)
       .json({ message: "Product added to favorites successfully", user });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
@@ -226,6 +233,7 @@ export const getUserFavorites = async (req, res, next) => {
     const favoriteProducts = user.favourites;
     return res.status(200).json(favoriteProducts);
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
